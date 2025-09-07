@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buat Checklist Baru</title>
+    <link rel="shortcut icon" href="https://ucarecdn.com/66229d2d-f53e-44e3-a4bb-cbf6bada2a73/Gemini_Generated_Image_zg5lz8zg5lz8zg5l.png" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'bounce-in': 'bounceIn 0.6s ease-out',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .priority-selected {
+            transform: scale(1.05);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-pink-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-lg border-b-4 border-purple-500">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <button onclick="goBack()" class="bg-purple-500 hover:bg-purple-600 p-2 rounded-full transition-colors">
+                        <i class="fas fa-arrow-left text-white"></i>
+                    </button>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-800">Create</h1>
+                        <p class="text-sm text-gray-600 hidden" id="selectedDateDisplay">Loading...</p>
+                    </div>
+                </div>
+                <div class="text-right hidden">
+                    <div class="bg-purple-50 px-3 py-1 rounded-lg">
+                        <p class="text-xs text-purple-600 font-medium" id="current-time">Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+             <!-- Task List Panel -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-lg p-6 animate-fade-in">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-gray-800">
+                            <i class="fas fa-list text-purple-600 mr-2"></i>
+                            Task Hari Ini
+                        </h3>
+                        <span class="bg-purple-100 text-purple-600 px-2 py-1 rounded-full text-sm font-medium" id="taskCount">0</span>
+                    </div>
+                    
+                    <div id="taskList" class="space-y-3 max-h-96 overflow-y-auto">
+                        <!-- Tasks akan dimuat di sini -->
+                    </div>
+                    
+                    <div id="emptyState" class="text-center py-8 text-gray-500 hidden">
+                        <i class="fas fa-inbox text-3xl mb-3 opacity-50"></i>
+                        <p class="text-sm">Belum ada task untuk hari ini</p>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="mt-6 grid grid-cols-3 gap-3">
+                    <div class="bg-green-100 p-3 rounded-lg text-center">
+                        <div class="text-lg font-bold text-green-600" id="lowCount">0</div>
+                        <div class="text-xs text-green-600">Rendah</div>
+                    </div>
+                    <div class="bg-yellow-100 p-3 rounded-lg text-center">
+                        <div class="text-lg font-bold text-yellow-600" id="mediumCount">0</div>
+                        <div class="text-xs text-yellow-600">Sedang</div>
+                    </div>
+                    <div class="bg-red-100 p-3 rounded-lg text-center">
+                        <div class="text-lg font-bold text-red-600" id="urgentCount">0</div>
+                        <div class="text-xs text-red-600">Mendesak</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Form Panel -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-lg p-6 animate-slide-up">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-gray-800">
+                            <i class="fas fa-plus-circle text-purple-600 mr-2"></i>
+                            <span id="formTitle">Tambah Task Baru</span>
+                        </h2>
+                        <button onclick="resetForm()" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-refresh"></i>
+                        </button>
+                    </div>
+
+                    <form id="taskForm" class="space-y-6">
+                        <input type="hidden" id="taskId" name="taskId">
+                        
+                        <!-- Title Input -->
+                        <div>
+                            <label for="title" class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-heading text-purple-600 mr-1"></i>
+                                Judul Task *
+                            </label>
+                            <input 
+                                type="text" 
+                                id="title" 
+                                name="title" 
+                                required
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
+                                placeholder="Masukkan judul task..."
+                            >
+                        </div>
+
+                        <!-- Priority Selection -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                <i class="fas fa-flag text-purple-600 mr-1"></i>
+                                Prioritas *
+                            </label>
+                            <div class="grid grid-cols-3 gap-3">
+                                <label class="cursor-pointer priority-option" data-priority="low">
+                                    <input type="radio" name="status" value="low" class="sr-only" required>
+                                    <div class="border-2 border-gray-200 rounded-lg p-4 text-center hover:border-green-400 transition-all duration-200">
+                                        <div class="w-4 h-4 bg-green-400 rounded-full mx-auto mb-2"></div>
+                                        <span class="text-sm font-medium text-gray-700">Rendah</span>
+                                    </div>
+                                </label>
+                                
+                                <label class="cursor-pointer priority-option" data-priority="medium">
+                                    <input type="radio" name="status" value="medium" class="sr-only">
+                                    <div class="border-2 border-gray-200 rounded-lg p-4 text-center hover:border-yellow-400 transition-all duration-200">
+                                        <div class="w-4 h-4 bg-yellow-400 rounded-full mx-auto mb-2"></div>
+                                        <span class="text-sm font-medium text-gray-700">Sedang</span>
+                                    </div>
+                                </label>
+                                
+                                <label class="cursor-pointer priority-option" data-priority="urgent">
+                                    <input type="radio" name="status" value="urgent" class="sr-only">
+                                    <div class="border-2 border-gray-200 rounded-lg p-4 text-center hover:border-red-400 transition-all duration-200">
+                                        <div class="w-4 h-4 bg-red-400 rounded-full mx-auto mb-2"></div>
+                                        <span class="text-sm font-medium text-gray-700">Mendesak</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div>
+                            <label for="description" class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-align-left text-purple-600 mr-1"></i>
+                                Deskripsi (Opsional)
+                            </label>
+                            <textarea 
+                                id="description" 
+                                name="description"
+                                rows="4"
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none transition-colors resize-none"
+                                placeholder="Tambahkan detail atau catatan..."
+                            ></textarea>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex flex-col sm:flex-row gap-3 pt-4">
+                            <button 
+                                type="submit" 
+                                id="saveBtn"
+                                class="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105"
+                            >
+                                <i class="fas fa-save mr-2"></i>
+                                <span id="saveBtnText">Simpan Task</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-6 rounded-xl shadow-2xl text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <p class="text-gray-700 font-medium">Menyimpan data...</p>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm mx-4 animate-bounce-in">
+            <div class="text-center">
+                <div class="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-check text-green-600 text-2xl"></i>
+                </div>
+                <p class="text-gray-600 text-sm mb-5" id="successMessage">Task berhasil disimpan</p>
+                 <button 
+                                type="button" 
+                                id="whatsappBtn"
+                                onclick="sendToWhatsApp()"
+                                class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors mb-5"
+                                disabled
+                            >
+                                <i class="fab fa-whatsapp mr-2"></i>
+                                Ingatkan saya
+                            </button>
+                <button onclick="closeModal('successModal')" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class TaskManager {
+            constructor() {
+                this.selectedDate = null;
+                this.currentEditId = null;
+                this.tasks = [];
+                this.init();
+            }
+
+            async init() {
+                await this.getSelectedDate();
+                this.loadCurrentTime();
+                this.bindEvents();
+                this.loadTasks();
+                
+                setInterval(() => this.loadCurrentTime(), 60000);
+            }
+
+            getSelectedDate() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const dateParam = urlParams.get('date');
+                
+                if (dateParam) {
+                    this.selectedDate = dateParam;
+                    this.displaySelectedDate();
+                } else {
+                    // Gunakan tanggal hari ini jika tidak ada parameter
+                    this.selectedDate = new Date().toISOString().split('T')[0];
+                    this.displaySelectedDate();
+                }
+            }
+
+            displaySelectedDate() {
+                if (this.selectedDate) {
+                    const date = new Date(this.selectedDate + 'T00:00:00');
+                    const options = { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    };
+                    const formattedDate = date.toLocaleDateString('id-ID', options);
+                    document.getElementById('selectedDateDisplay').textContent = `Task untuk ${formattedDate}`;
+                }
+            }
+
+            async loadCurrentTime() {
+                try {
+                    const response = await fetch('/api/current-time');
+                    const data = await response.json();
+                    document.getElementById('current-time').textContent = data.formatted;
+                } catch (error) {
+                    console.error('Error loading time:', error);
+                    const now = new Date();
+                    document.getElementById('current-time').textContent = now.toLocaleString('id-ID');
+                }
+            }
+
+            bindEvents() {
+                // Form submission
+                document.getElementById('taskForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleSubmit();
+                });
+
+                // Priority selection
+                document.querySelectorAll('.priority-option').forEach(option => {
+                    option.addEventListener('click', () => {
+                        // Remove active class from all options
+                        document.querySelectorAll('.priority-option').forEach(opt => {
+                            opt.classList.remove('priority-selected');
+                            const div = opt.querySelector('div');
+                            div.classList.remove('border-green-400', 'border-yellow-400', 'border-red-400', 'bg-green-50', 'bg-yellow-50', 'bg-red-50');
+                        });
+                        
+                        // Add active class to selected option
+                        option.classList.add('priority-selected');
+                        const priority = option.dataset.priority;
+                        const div = option.querySelector('div');
+                        
+                        if (priority === 'low') {
+                            div.classList.add('border-green-400', 'bg-green-50');
+                        } else if (priority === 'medium') {
+                            div.classList.add('border-yellow-400', 'bg-yellow-50');
+                        } else if (priority === 'urgent') {
+                            div.classList.add('border-red-400', 'bg-red-50');
+                        }
+                    });
+                });
+            }
+
+            async handleSubmit() {
+                const formData = new FormData(document.getElementById('taskForm'));
+                const taskData = {
+                    id: this.currentEditId || Date.now().toString(),
+                    date: this.selectedDate,
+                    title: formData.get('title').trim(),
+                    status: formData.get('status'),
+                    description: formData.get('description').trim(),
+                    createdAt: this.currentEditId ? this.findTaskById(this.currentEditId)?.createdAt : new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+
+                // Validasi
+                if (!taskData.title || !taskData.status) {
+                    alert('Judul dan prioritas harus diisi!');
+                    return;
+                }
+
+                this.showLoading();
+
+                try {
+                    // Simpan ke localStorage
+                    this.saveTaskToStorage(taskData);
+                    
+                    // Kirim ke server untuk WhatsApp processing
+                    await this.sendToServer(taskData);
+                    
+                    this.hideLoading();
+                    this.showSuccess(this.currentEditId ? 'Task berhasil diupdate!' : 'Task berhasil disimpan!');
+                    this.resetForm();
+                    this.loadTasks();
+                    
+                    // Enable WhatsApp button
+                    document.getElementById('whatsappBtn').disabled = false;
+                    
+                } catch (error) {
+                    this.hideLoading();
+                    console.error('Error:', error);
+                    alert('Terjadi kesalahan saat menyimpan task');
+                }
+            }
+
+            saveTaskToStorage(taskData) {
+                const allTasks = JSON.parse(localStorage.getItem('dailyChecklist') || '{}');
+                
+                if (!allTasks[this.selectedDate]) {
+                    allTasks[this.selectedDate] = [];
+                }
+
+                if (this.currentEditId) {
+                    // Update existing task
+                    const index = allTasks[this.selectedDate].findIndex(task => task.id === this.currentEditId);
+                    if (index !== -1) {
+                        allTasks[this.selectedDate][index] = taskData;
+                    }
+                } else {
+                    // Add new task
+                    allTasks[this.selectedDate].push(taskData);
+                }
+                
+                localStorage.setItem('dailyChecklist', JSON.stringify(allTasks));
+            }
+
+            async sendToServer(taskData) {
+                const response = await fetch('/api/save-checklist', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(taskData)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Server error');
+                }
+
+                return await response.json();
+            }
+
+            loadTasks() {
+                const allTasks = JSON.parse(localStorage.getItem('dailyChecklist') || '{}');
+                this.tasks = allTasks[this.selectedDate] || [];
+                
+                this.renderTasks();
+                this.updateStats();
+            }
+
+            renderTasks() {
+                const container = document.getElementById('taskList');
+                const emptyState = document.getElementById('emptyState');
+                
+                if (this.tasks.length === 0) {
+                    container.innerHTML = '';
+                    emptyState.classList.remove('hidden');
+                    document.getElementById('taskCount').textContent = '0';
+                    return;
+                }
+
+                emptyState.classList.add('hidden');
+                document.getElementById('taskCount').textContent = this.tasks.length;
+
+                const statusConfig = {
+                    'low': { color: 'green', icon: 'fas fa-circle', text: 'Rendah' },
+                    'medium': { color: 'yellow', icon: 'fas fa-circle', text: 'Sedang' },
+                    'urgent': { color: 'red', icon: 'fas fa-exclamation-circle', text: 'Mendesak' }
+                };
+
+                container.innerHTML = this.tasks.map(task => {
+                    const config = statusConfig[task.status];
+                    const createdAt = new Date(task.createdAt).toLocaleTimeString('id-ID', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    });
+
+                    return `
+                        <div class="border-l-4 border-${config.color}-400 bg-gray-50 p-3 rounded-r-lg hover:shadow-md transition-shadow">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-2 mb-1">
+                                        <i class="${config.icon} text-${config.color}-500 text-sm"></i>
+                                        <span class="text-xs font-medium text-${config.color}-600">${config.text}</span>
+                                        <span class="text-xs text-gray-500">${createdAt}</span>
+                                    </div>
+                                    <h4 class="font-semibold text-gray-800 text-sm mb-1">${task.title}</h4>
+                                    ${task.description ? `<p class="text-xs text-gray-600 line-clamp-2">${task.description}</p>` : ''}
+                                </div>
+                                <div class="flex space-x-1 ml-2">
+                                    <button onclick="editTask('${task.id}')" class="text-blue-500 hover:text-blue-700 p-1">
+                                        <i class="fas fa-edit text-sm"></i>
+                                    </button>
+                                    <button onclick="deleteTask('${task.id}')" class="text-red-500 hover:text-red-700 p-1">
+                                        <i class="fas fa-trash text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            updateStats() {
+                const stats = {
+                    low: this.tasks.filter(task => task.status === 'low').length,
+                    medium: this.tasks.filter(task => task.status === 'medium').length,
+                    urgent: this.tasks.filter(task => task.status === 'urgent').length
+                };
+
+                document.getElementById('lowCount').textContent = stats.low;
+                document.getElementById('mediumCount').textContent = stats.medium;
+                document.getElementById('urgentCount').textContent = stats.urgent;
+            }
+
+            editTask(taskId) {
+                const task = this.findTaskById(taskId);
+                if (!task) return;
+
+                this.currentEditId = taskId;
+                
+                // Fill form
+                document.getElementById('title').value = task.title;
+                document.getElementById('description').value = task.description || '';
+                
+                // Select priority
+                const priorityInput = document.querySelector(`input[value="${task.status}"]`);
+                if (priorityInput) {
+                    priorityInput.checked = true;
+                    priorityInput.closest('.priority-option').click();
+                }
+                
+                // Update form title and button
+                document.getElementById('formTitle').textContent = 'Edit Task';
+                document.getElementById('saveBtnText').textContent = 'Update Task';
+                
+                // Scroll to form
+                document.getElementById('taskForm').scrollIntoView({ behavior: 'smooth' });
+            }
+
+            deleteTask(taskId) {
+                if (!confirm('Yakin ingin menghapus task ini?')) return;
+
+                const allTasks = JSON.parse(localStorage.getItem('dailyChecklist') || '{}');
+                if (allTasks[this.selectedDate]) {
+                    allTasks[this.selectedDate] = allTasks[this.selectedDate].filter(task => task.id !== taskId);
+                    localStorage.setItem('dailyChecklist', JSON.stringify(allTasks));
+                    this.loadTasks();
+                }
+            }
+
+            findTaskById(taskId) {
+                return this.tasks.find(task => task.id === taskId);
+            }
+
+            resetForm() {
+                document.getElementById('taskForm').reset();
+                this.currentEditId = null;
+                
+                // Reset priority selection
+                document.querySelectorAll('.priority-option').forEach(opt => {
+                    opt.classList.remove('priority-selected');
+                    const div = opt.querySelector('div');
+                    div.classList.remove('border-green-400', 'border-yellow-400', 'border-red-400', 'bg-green-50', 'bg-yellow-50', 'bg-red-50');
+                });
+                
+                // Reset form title and button
+                document.getElementById('formTitle').textContent = 'Tambah Task Baru';
+                document.getElementById('saveBtnText').textContent = 'Simpan Task';
+                
+                // Disable WhatsApp button
+                document.getElementById('whatsappBtn').disabled = true;
+            }
+
+            showLoading() {
+                document.getElementById('loadingModal').classList.remove('hidden');
+            }
+
+            hideLoading() {
+                document.getElementById('loadingModal').classList.add('hidden');
+            }
+
+            showSuccess(message) {
+                document.getElementById('successMessage').textContent = message;
+                document.getElementById('successModal').classList.remove('hidden');
+            }
+        }
+
+        // Global functions
+        function goBack() {
+            window.location.href = '/';
+        }
+
+        function resetForm() {
+            window.taskManager.resetForm();
+        }
+
+        function editTask(taskId) {
+            window.taskManager.editTask(taskId);
+        }
+
+        function deleteTask(taskId) {
+            window.taskManager.deleteTask(taskId);
+        }
+
+        async function sendToWhatsApp() {
+            const lastTask = window.taskManager.tasks[window.taskManager.tasks.length - 1];
+            if (!lastTask) {
+                alert('Tidak ada task untuk dikirim!');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/save-checklist', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(lastTask)
+                });
+
+                const result = await response.json();
+                if (result.success && result.whatsappUrl) {
+                    window.open(result.whatsappUrl, '_blank');
+                } else {
+                    alert('Gagal membuat URL WhatsApp');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan saat mengirim ke WhatsApp');
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', () => {
+            window.taskManager = new TaskManager();
+        });
+    </script>
+</body>
+</html>
